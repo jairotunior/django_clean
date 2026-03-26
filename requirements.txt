@@ -8,8 +8,6 @@ djangorestframework==3.17.1
 fastapi==0.135.1
 idna==3.11
 iniconfig==2.3.0
-# Editable Git install with no remote (lss_clean==0.1.0)
--e d:\python_projects\lss_clean
 packaging==26.0
 pluggy==1.6.0
 pydantic==2.12.5
