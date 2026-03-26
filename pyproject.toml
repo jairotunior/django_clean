@@ -1,0 +1,12 @@
+[project]
+name = "lss_clean"
+version = "0.1.0"
+description = "LSS + Hexagonal Architecture"
+authors = [{name = "Jairo Rangel", email = "jairotunior@gmail.com"}]
+
+[project.urls]
+Home = "https://github.com/sirrobin/foobar"
+
+[build-system]
+build-backend = "flit_core.buildapi"
+requires = ["flit_core >=3.2,<4"]
