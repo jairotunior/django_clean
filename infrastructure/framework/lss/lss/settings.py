@@ -118,3 +118,17 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+
+from lss.containers.container import create_application
+from lss_clean.contexts.recruitment.interfaces.presenters.prospect import WebProspectViewPresenter
+from lss_clean.contexts.recruitment.interfaces.presenters.application import WebApplicationPresenter
+
+
+app_container = create_application(
+    prospect_presenter=WebProspectViewPresenter(),
+    application_presenter=WebApplicationPresenter(),
+)
+
+
+APP_CONTAINER = app_container

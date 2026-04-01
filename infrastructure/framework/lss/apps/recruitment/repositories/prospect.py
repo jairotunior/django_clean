@@ -2,12 +2,12 @@ from uuid import UUID
 from typing import Optional
 from lss_clean.contexts.recruitment.application.repositories.prospect import ProspectRepository
 from lss_clean.contexts.recruitment.domain.entities import Prospect, Application, Requisition, Position, RequisitionDetail
-from apps.recruitment.models import Prospect as ProspectModel
+
 from lss_clean.contexts.recruitment.domain.exceptions import NotFoundError, BusinessRuleViolation
 from django.core.exceptions import MultipleObjectsReturned
 
 
-def build_prospect(prospect: ProspectModel) -> Prospect:
+def build_prospect(prospect) -> Prospect:
     current_application = prospect.applications.last()
     return Prospect(
         uuid=prospect.uuid,
@@ -38,8 +38,6 @@ def build_prospect(prospect: ProspectModel) -> Prospect:
                 is_active=current_application.requisition.is_active,
                 details=[
                     RequisitionDetail(
-                        id=detail.id,
-                        uuid=detail.uuid,
                         position=Position(
                             id=detail.position.id,
                             uuid=detail.position.uuid,
@@ -50,14 +48,14 @@ def build_prospect(prospect: ProspectModel) -> Prospect:
                         is_active=detail.is_active,
                     ) for detail in current_application.requisition.details.all()
                 ],
-            ),
+            ) if current_application else None,
             position=Position(
-                id=current_application.position.id,
-                uuid=current_application.position.uuid,
                 name=current_application.position.name,
                 description=current_application.position.description,
                 is_active=current_application.position.is_active,
-            ),
+                id=current_application.position.id,
+                uuid=current_application.position.uuid,
+            ) if current_application else None,
             availability=current_application.availability,
         ) if current_application else None,
     )
@@ -66,7 +64,8 @@ def build_prospect(prospect: ProspectModel) -> Prospect:
 class ProspectRepositoryDjango(ProspectRepository):
 
     def save(self, prospect: Prospect) -> None:
-        ProspectModel.objects.create(
+        from apps.recruitment.models import Prospect as ProspectModel
+        prospect_model = ProspectModel.objects.create(
             uuid=prospect.uuid,
             user_id=prospect.user_id,
             first_name=prospect.first_name,
@@ -81,8 +80,10 @@ class ProspectRepositoryDjango(ProspectRepository):
             availability=prospect.availability,
             current_application=prospect.current_application,
         )
+        return build_prospect(prospect_model)
 
-    def base_get(self, **kwargs) -> Optional[ProspectModel]:
+    def base_get(self, **kwargs):
+        from apps.recruitment.models import Prospect as ProspectModel
         return ProspectModel.objects.select_related(
             'user'
         ).prefetch_related(
@@ -93,6 +94,7 @@ class ProspectRepositoryDjango(ProspectRepository):
         ).get(**kwargs)
 
     def get(self, prospect_id: int) -> Optional[Prospect]:
+        from apps.recruitment.models import Prospect as ProspectModel
         try:
             prospect = self.base_get(id=prospect_id)
         except ProspectModel.DoesNotExist:
@@ -103,6 +105,7 @@ class ProspectRepositoryDjango(ProspectRepository):
         return build_prospect(prospect)
 
     def get_by_email(self, email: str) -> Optional[Prospect]:
+        from apps.recruitment.models import Prospect as ProspectModel
         prospect = ProspectModel.objects.filter(email=email).first()
         if not prospect:
             return None

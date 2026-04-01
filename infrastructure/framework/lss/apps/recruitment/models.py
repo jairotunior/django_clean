@@ -4,7 +4,7 @@ from django.conf import settings
 from django.db import models
 
 from lss_clean.contexts.recruitment.domain.enums import ApplicationStatus, Availability
-from apps.recruitment.choices import (
+from infrastructure.framework.lss.apps.recruitment.choices import (
     APPLICATION_STATUS_CHOICES,
     AVAILABILITY_CHOICES,
 )

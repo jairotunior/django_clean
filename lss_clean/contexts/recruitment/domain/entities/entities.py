@@ -12,7 +12,7 @@ from lss_clean.contexts.recruitment.domain.events import (
 )
 
 from lss_clean.contexts.recruitment.domain.entities.entity import Entity
-from lss_clean.contexts.recruitment.domain.exceptions import BusinessRuleViolation
+from lss_clean.contexts.recruitment.domain.exceptions import BusinessRuleViolation, ValidationError
 
 
 @dataclass
@@ -66,12 +66,12 @@ class Prospect:
     _events: list = field(default_factory=list, repr=False)
 
     def __post_init__(self) -> None:
-        if self.availability not in Availability:
-            raise ValueError(f"Invalid availability: {self.availability}")
-        if self.country not in CountryName:
-            raise ValueError(f"Invalid country: {self.country}")
+        if not self.availability:
+            raise ValidationError(f"Invalid availability: {self.availability}")
+        if not self.country:
+            raise ValidationError(f"Invalid country: {self.country}")
         if self.user_id is None:
-            raise ValueError("User ID is required")
+            raise ValidationError("User ID is required")
         if self.uuid is None:
             self.uuid = uuid4()
 
@@ -111,6 +111,7 @@ class Prospect:
         availability: Availability,
     ) -> Prospect:
         return cls(
+            uuid=uuid4(),
             first_name=first_name,
             last_name=last_name,
             email=email,

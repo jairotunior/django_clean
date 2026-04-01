@@ -1,4 +1,5 @@
-from dataclasses import asdict
+import json
+from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.mixins import CreateModelMixin, ListModelMixin, RetrieveModelMixin
@@ -8,10 +9,8 @@ from apps.recruitment.api.serializers.prospect import ProspectSerializer
 from apps.recruitment.models import Prospect as ProspectModel
 from apps.recruitment.repositories.prospect import ProspectRepositoryDjango
 from lss_clean.contexts.recruitment.application.use_cases.create_prospect import CreateProspectUseCase
-from lss_clean.contexts.recruitment.application.dtos.prospect_command import CreateProspectCommand
-from lss_clean.contexts.recruitment.domain.enums import CountryName, Availability
-from lss_clean.contexts.recruitment.domain.exceptions import BusinessRuleViolation
 from lss_clean.contexts.recruitment.domain.entities import Prospect
+from lss_clean.contexts.recruitment.interfaces.controllers.prospect import ProspectController
 
 
 
@@ -43,26 +42,41 @@ class ProspectAPIView(GenericViewSet, ListModelMixin, CreateModelMixin, Retrieve
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        command = CreateProspectCommand(
-            first_name=serializer.validated_data['first_name'],
-            last_name=serializer.validated_data['last_name'],
-            email=serializer.validated_data['email'],
-            phone=serializer.validated_data['phone'],
-            address=serializer.validated_data['address'],
-            city=serializer.validated_data['city'],
-            state=serializer.validated_data['state'],
-            zip=serializer.validated_data['zip'],
-            country=serializer.validated_data['country'],
-            user_id=serializer.validated_data['user'].id,
-            availability=serializer.validated_data['availability'],
-        )
+        params = {
+            'first_name': serializer.validated_data['first_name'],
+            'last_name': serializer.validated_data['last_name'],
+            'email': serializer.validated_data['email'],
+            'phone': serializer.validated_data['phone'],
+            'address': serializer.validated_data['address'],
+            'city': serializer.validated_data['city'],
+            'state': serializer.validated_data['state'],
+            'zip': serializer.validated_data['zip'],
+            'country': serializer.validated_data['country'],
+            'user_id': serializer.validated_data['user'].id,
+            'availability': serializer.validated_data['availability'],
+        }
 
-        prospect_repository = ProspectRepositoryDjango()
-        try:
-            prospect = CreateProspectUseCase(prospect_repository).execute(command)
-        except BusinessRuleViolation as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        return Response(domain_to_response(prospect), status=status.HTTP_201_CREATED)
+        prospect_controller = settings.APP_CONTAINER.prospect_controller
+        result = prospect_controller.handle_create(**params)
+        if not result.is_success:
+            error = prospect_controller.prospect_presenter.present_error(result.error.message, str(result.error.code))
+            return Response({'error': error.message}, status=status.HTTP_400_BAD_REQUEST)
+        
+        success = result._success
+        response = {
+            'uuid': success.uuid,
+            'id': success.id,
+            'user_id': success.user_id,
+            'first_name': success.first_name,
+            'last_name': success.last_name,
+            'email': success.email,
+            'phone': success.phone,
+            'address': success.address,
+            'city': success.city,
+            'state': success.state,
+            'zip': success.zip,
+            'country': success.country,
+            'availability': success.availability,
+            'created_at': success.created_at,
+        }
+        return Response(response, status=status.HTTP_201_CREATED)
