@@ -60,7 +60,7 @@ class ProspectAPIView(GenericViewSet, ListModelMixin, CreateModelMixin, Retrieve
         result = prospect_controller.handle_create(**params)
         if not result.is_success:
             error = prospect_controller.prospect_presenter.present_error(result.error.message, str(result.error.code))
-            return Response({'error': error.message}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': error.message, 'code': str(error.code)}, status=status.HTTP_400_BAD_REQUEST)
         
         success = result._success
         response = {

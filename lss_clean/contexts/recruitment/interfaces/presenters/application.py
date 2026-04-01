@@ -11,7 +11,7 @@ class WebApplicationPresenter(ApplicationPresenter):
             id=response.id,
             uuid=response.uuid,
             status=response.status,
-            created_at=response.created_at,
+            created_at=response.created_at.strftime('%Y-%m-%d %H:%M:%S'),
             requisition=response.requisition.id,
             position=response.position.id,
             availability=response.availability,

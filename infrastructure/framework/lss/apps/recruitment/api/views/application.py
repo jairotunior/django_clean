@@ -42,7 +42,7 @@ class ApplicationViewSet(GenericViewSet, CreateModelMixin):
         result = controller.handle_profiling(**params)
         if not result.is_success:
             error = controller.application_presenter.present_error(result.error.message, str(result.error.code))
-            return Response({'error': error.message}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': str(error.message), 'code': error.code}, status=status.HTTP_400_BAD_REQUEST)
         
         success = result._success
         return Response(domain_to_response(success), status=status.HTTP_201_CREATED)
